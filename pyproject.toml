@@ -1,0 +1,80 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "elec-tariffs"
+dynamic = ["version"]
+description = "Cost French electricity consumption hour by hour under Base, HP/HC and Tempo contracts"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "damou8" }]
+requires-python = ">=3.14"
+dependencies = ["aiohttp>=3.10"]
+keywords = ["electricity", "tariff", "tempo", "edf", "rte", "linky", "home-assistant"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Home Automation",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/damou8/elec-tariffs"
+Issues = "https://github.com/damou8/elec-tariffs/issues"
+
+[tool.hatch.version]
+path = "src/elec_tariffs/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/elec_tariffs"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["error"]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+source = ["elec_tariffs"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 95
+show_missing = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "\\.\\.\\."]
+
+[tool.mypy]
+strict = true
+python_version = "3.14"
+files = ["src", "tests"]
+
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN401",  # Any is needed for JSON payloads
+    "COM812",  # incompatible with the formatter
+    "CPY001",  # the license is in LICENSE
+    "D203",    # incompatible with D211
+    "D213",    # incompatible with D212
+    "ISC001",  # incompatible with the formatter
+    "TC",      # annotations are lazy since Python 3.14, no TYPE_CHECKING blocks
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",     # pytest asserts
+    "PLR2004",  # magic values are the expected results
+    "D103",     # test names say what they check
+    "SLF001",   # tests read private state on purpose
+]
