@@ -87,21 +87,6 @@ Prices you set yourself are `PricePeriod` objects: a first and last day (`None` 
 - **Subscription.** The yearly fixed part is spread evenly over the hours of the year (8,760, or 8,784 in a leap year).
 - **Missing data.** An hour whose Tempo color or price isn't known raises `MissingColorError` or `MissingPriceError` instead of guessing.
 
-## Daily totals
-
-A Linky meter without a load curve only reports daily totals. `DayShape` estimates how a day splits between its hours:
-
-```python
-from elec_tariffs import DayShape
-
-# Days with a load curve: {date: [24 hourly kWh, in local time]}.
-shape = DayShape.learn(days)
-# The local hours of a day with only a total, and that total.
-values = shape.spread(hours, total)
-```
-
-It fits the night consumption (22:00 to 6:00) as a straight line of the daily total, and spreads both parts along the average hourly profile. With fewer than 14 complete days it spreads evenly. The result is an estimate: it can't know, for example, that consumption moves to the night on red Tempo days.
-
 ## Tempo calendar sources
 
 | Source | Account | Notes |
