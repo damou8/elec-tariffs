@@ -35,7 +35,6 @@ from .models import (
     TimeRange,
     Tranche,
 )
-from .shape import DayShape
 from .sources import (
     FallbackTempoSource,
     RteOfficialTempoClient,
@@ -53,7 +52,6 @@ __all__ = [
     "ContractKind",
     "ContractRules",
     "DayCalendar",
-    "DayShape",
     "ElecTariffsError",
     "FallbackTempoSource",
     "HourCost",
