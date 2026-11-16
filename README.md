@@ -5,7 +5,8 @@ Cost French electricity consumption hour by hour under Base, HP/HC and Tempo con
 `elec-tariffs` takes hourly consumption (as a Linky meter reports it) and works out what it cost under one or more contracts: which tranche each hour falls into, its price on that day, and its share of the yearly subscription. It also downloads the data that needs:
 
 - the regulated prices (Tarif Bleu) of every period since 2012, from [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/historique-des-tarifs-reglementes-de-vente-delectricite-pour-les-consommateurs-residentiels/);
-- the color of each Tempo day, from RTE.
+- the color of each Tempo day, from RTE;
+- the hourly outdoor temperature anywhere, from [Open-Meteo](https://open-meteo.com/), for homes without a thermometer.
 
 It is async (aiohttp), fully typed and has no dependency on Home Assistant. It was written for the [Electricity Contracts](https://github.com/damou8/electricity_contracts) Home Assistant integration.
 
@@ -115,13 +116,18 @@ Past colors never change, so callers should cache them and only ask for the curr
 
 To create the official API application: sign up on data.rte-france.com, open the "Tempo Like Supply Contract" API, choose "S'abonner à l'API" (this creates an application), then copy its client ID and secret.
 
+## Outdoor temperature
+
+`OpenMeteoClient(session).async_hourly_temperatures(latitude, longitude, start, end)` returns the air temperature at 2 m (°C) of each hour of the UTC days `start` to `end`, keyed by the UTC start of the hour. It reads Open-Meteo's [historical weather API](https://open-meteo.com/en/docs/historical-weather-api): free for non-commercial use, without an account, back to 1940. Its default model blends the ERA5 reanalyses with the ECMWF forecast model, so it covers the last days too; those hours are revised about five days later, so callers should ask for the last week again. Long ranges are split into requests of 366 days at most. The data is under [CC BY 4.0](https://open-meteo.com/en/licence): credit Open-Meteo where it is shown.
+
 ## Errors
 
 Every error derives from `ElecTariffsError`:
 
 - `MissingColorError`, `MissingPriceError` (with the `day` concerned);
 - `TrvServerError`, `TrvFormatError` for data.gouv.fr;
-- `TempoServerError` (network or 5xx), `TempoRateLimitError` (429), `TempoAuthError` (credentials refused) and `TempoFormatError` for the Tempo sources.
+- `TempoServerError` (network or 5xx), `TempoRateLimitError` (429), `TempoAuthError` (credentials refused) and `TempoFormatError` for the Tempo sources;
+- `WeatherServerError` (network or 5xx), `WeatherRateLimitError` (429) and `WeatherFormatError` (request refused or unexpected answer) for Open-Meteo.
 
 ## Development
 
