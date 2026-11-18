@@ -55,3 +55,19 @@ class TempoAuthError(TempoError):
 
 class TempoFormatError(TempoError):
     """The calendar source answered with data in an unexpected format."""
+
+
+class WeatherError(ElecTariffsError):
+    """The outdoor temperature could not be read."""
+
+
+class WeatherServerError(WeatherError):
+    """The weather source could not be reached or answered with a server error."""
+
+
+class WeatherRateLimitError(WeatherError):
+    """The weather source asks to slow down (HTTP 429)."""
+
+
+class WeatherFormatError(WeatherError):
+    """The weather source refused the request or answered in an unexpected format."""
