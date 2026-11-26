@@ -15,6 +15,8 @@ from elec_tariffs import (
     TimeRange,
     Tranche,
     cost_hour,
+    cost_hour_at_price,
+    fixed_cost_per_day,
     fixed_cost_per_hour,
     parse_trv_csv,
     price_at,
@@ -178,3 +180,27 @@ def test_cost_hour_missing_tranche_price() -> None:
     periods = [PricePeriod(start=date(2026, 1, 1), end=None, fixed_per_year=0)]
     with pytest.raises(MissingPriceError):
         cost_hour(at(2026, 3, 7, 15), 1.0, BASE, periods, {})
+
+
+def test_fixed_cost_per_day_follows_the_length_of_the_year() -> None:
+    assert fixed_cost_per_day(365.0, date(2026, 3, 1)) == pytest.approx(1.0)
+    assert fixed_cost_per_day(366.0, date(2028, 3, 1)) == pytest.approx(1.0)
+
+
+def test_cost_hour_at_price_splits_into_tranches() -> None:
+    rules = ContractRules(
+        kind=ContractKind.HPHC, off_peak=(TimeRange(start=time(5, 30), end=time(6)),)
+    )
+    cost = cost_hour_at_price(
+        at(2026, 3, 9, 5), 2.0, rules, {}, price=0.25, fixed_per_year=365 * 24
+    )
+    assert cost.energy == {Tranche.HP: 1.0, Tranche.HC: 1.0}
+    assert cost.variable == {Tranche.HP: 0.25, Tranche.HC: 0.25}
+    assert cost.fixed == pytest.approx(1.0)
+
+
+def test_cost_hour_at_price_needs_the_tempo_color() -> None:
+    with pytest.raises(MissingColorError):
+        cost_hour_at_price(
+            at(2026, 1, 5, 12), 1.0, TEMPO, {}, price=0.2, fixed_per_year=0
+        )

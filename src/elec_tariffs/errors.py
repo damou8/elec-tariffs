@@ -37,6 +37,18 @@ class TrvFormatError(TrvError):
     """A regulated price file does not have the expected columns or values."""
 
 
+class PrvgError(ElecTariffsError):
+    """The gas reference prices could not be read."""
+
+
+class PrvgServerError(PrvgError):
+    """The CRE website could not be reached or answered with an error."""
+
+
+class PrvgFormatError(PrvgError):
+    """The gas reference price file does not have the expected sheets or values."""
+
+
 class TempoError(ElecTariffsError):
     """The Tempo calendar could not be read."""
 
