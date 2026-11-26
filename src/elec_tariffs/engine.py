@@ -95,11 +95,16 @@ def price_at(periods: Sequence[PricePeriod], day: date, tranche: Tranche) -> flo
     return period.prices[tranche]
 
 
+def fixed_cost_per_day(fixed_per_year: float, day: date) -> float:
+    """Spread a yearly fixed part evenly over the days of the year of `day`."""
+    year = day.year
+    days = (date(year + 1, 1, 1) - date(year, 1, 1)).days
+    return fixed_per_year / days
+
+
 def fixed_cost_per_hour(period: PricePeriod, start: datetime) -> float:
     """Spread the yearly fixed part evenly over the hours of the year of `start`."""
-    year = start.year
-    days = (date(year + 1, 1, 1) - date(year, 1, 1)).days
-    return period.fixed_per_year / days / 24
+    return fixed_cost_per_day(period.fixed_per_year, start.date()) / 24
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -137,4 +142,29 @@ def cost_hour(
         variable[tranche] = tranche_kwh * period.prices[tranche]
     return HourCost(
         energy=energy, variable=variable, fixed=fixed_cost_per_hour(period, start)
+    )
+
+
+def cost_hour_at_price(  # noqa: PLR0913 - the hour, its rules and its prices
+    start: datetime,
+    kwh: float,
+    rules: ContractRules,
+    calendar: DayCalendar,
+    *,
+    price: float,
+    fixed_per_year: float,
+) -> HourCost:
+    """Cost the hour starting at `start` (local, aware) at one price for every tranche.
+
+    For prices that change every hour, such as a price read from a sensor: the
+    energy is still split into the contract's tranches. Raise MissingColorError
+    when a Tempo contract needs a color that is not known.
+    """
+    energy = split_hour(start, kwh, rules, calendar)
+    return HourCost(
+        energy=energy,
+        variable={
+            tranche: tranche_kwh * price for tranche, tranche_kwh in energy.items()
+        },
+        fixed=fixed_cost_per_day(fixed_per_year, start.date()) / 24,
     )

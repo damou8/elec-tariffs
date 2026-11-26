@@ -1,10 +1,15 @@
-"""Cost French electricity consumption hour by hour under Base, HP/HC and Tempo."""
+"""Cost French electricity consumption hour by hour under Base, HP/HC and Tempo.
+
+Also reads the French gas reference prices, to cost gas by the day.
+"""
 
 from ._version import __version__
 from .engine import (
     TEMPO_OFF_PEAK,
     HourCost,
     cost_hour,
+    cost_hour_at_price,
+    fixed_cost_per_day,
     fixed_cost_per_hour,
     is_off_peak,
     period_at,
@@ -16,6 +21,9 @@ from .errors import (
     ElecTariffsError,
     MissingColorError,
     MissingPriceError,
+    PrvgError,
+    PrvgFormatError,
+    PrvgServerError,
     TempoAuthError,
     TempoError,
     TempoFormatError,
@@ -34,6 +42,8 @@ from .models import (
     ContractKind,
     ContractRules,
     DayCalendar,
+    GasPricePeriod,
+    GasProfile,
     PricePeriod,
     TempoColor,
     TimeRange,
@@ -41,19 +51,23 @@ from .models import (
 )
 from .shape import DayShape
 from .sources import (
+    PRVG_URL,
     FallbackTempoSource,
     OpenMeteoClient,
+    PrvgClient,
     RteOfficialTempoClient,
     RtePublicTempoClient,
     TempoCalendarSource,
     TrvClient,
     parse_hourly_temperatures,
+    parse_prvg_xlsx,
     parse_trv_csv,
     season_bounds,
     season_of,
 )
 
 __all__ = [
+    "PRVG_URL",
     "TEMPO_OFF_PEAK",
     "TRANCHES",
     "ContractKind",
@@ -62,11 +76,17 @@ __all__ = [
     "DayShape",
     "ElecTariffsError",
     "FallbackTempoSource",
+    "GasPricePeriod",
+    "GasProfile",
     "HourCost",
     "MissingColorError",
     "MissingPriceError",
     "OpenMeteoClient",
     "PricePeriod",
+    "PrvgClient",
+    "PrvgError",
+    "PrvgFormatError",
+    "PrvgServerError",
     "RteOfficialTempoClient",
     "RtePublicTempoClient",
     "TempoAuthError",
@@ -88,9 +108,12 @@ __all__ = [
     "WeatherServerError",
     "__version__",
     "cost_hour",
+    "cost_hour_at_price",
+    "fixed_cost_per_day",
     "fixed_cost_per_hour",
     "is_off_peak",
     "parse_hourly_temperatures",
+    "parse_prvg_xlsx",
     "parse_trv_csv",
     "period_at",
     "price_at",

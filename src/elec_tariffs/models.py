@@ -14,6 +14,15 @@ class ContractKind(StrEnum):
     TEMPO = "tempo"
 
 
+class GasProfile(StrEnum):
+    """What a home uses its gas for, as the CRE reference price tells them apart."""
+
+    COOKING_WATER = "cooking_water"
+    """Cooking and hot water only: about 1 MWh a year."""
+    HEATING = "heating"
+    """Heating, usually with the hot water and the cooking: about 11 MWh a year."""
+
+
 class TempoColor(StrEnum):
     """Color of a Tempo day."""
 
@@ -98,6 +107,24 @@ class PricePeriod:
     end: date | None
     fixed_per_year: float
     prices: Mapping[Tranche, float] = field(default_factory=dict)
+
+    def covers(self, day: date) -> bool:
+        """Tell whether the period applies on `day`."""
+        return self.start <= day and (self.end is None or day <= self.end)
+
+
+@dataclass(frozen=True, kw_only=True)
+class GasPricePeriod:
+    """A gas price in force from `start` to `end` (both included, `end` None if open).
+
+    `price` is the price of a kWh, `fixed_per_year` the yearly subscription, both
+    with taxes.
+    """
+
+    start: date
+    end: date | None
+    fixed_per_year: float
+    price: float
 
     def covers(self, day: date) -> bool:
         """Tell whether the period applies on `day`."""

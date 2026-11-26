@@ -6,7 +6,8 @@ Cost French electricity consumption hour by hour under Base, HP/HC and Tempo con
 
 - the regulated prices (Tarif Bleu) of every period since 2012, from [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/historique-des-tarifs-reglementes-de-vente-delectricite-pour-les-consommateurs-residentiels/);
 - the color of each Tempo day, from RTE;
-- the hourly outdoor temperature anywhere, from [Open-Meteo](https://open-meteo.com/), for homes without a thermometer.
+- the hourly outdoor temperature anywhere, from [Open-Meteo](https://open-meteo.com/), for homes without a thermometer;
+- the gas reference price (prix repère de vente de gaz) of every month since June 2023, from the [CRE](https://www.cre.fr/consommateurs/prix-reperes-et-references/prix-repere-de-vente-de-gaz-naturel-a-destination-des-clients-residentiels.html).
 
 It is async (aiohttp), fully typed and has no dependency on Home Assistant. It was written for the [Electricity Contracts](https://github.com/damou8/electricity_contracts) Home Assistant integration.
 
@@ -87,6 +88,7 @@ Prices you set yourself are `PricePeriod` objects: a first and last day (`None` 
 - **Prices** change at midnight on the first day of a price period (1 February and 1 August for the regulated prices). An hour uses the prices of its calendar day.
 - **Subscription.** The yearly fixed part is spread evenly over the hours of the year (8,760, or 8,784 in a leap year).
 - **Missing data.** An hour whose Tempo color or price isn't known raises `MissingColorError` or `MissingPriceError` instead of guessing.
+- **A price that changes every hour**, read from a price sensor for example: `cost_hour_at_price(start, kwh, rules, calendar, price=..., fixed_per_year=...)` splits the hour into the contract's tranches like `cost_hour`, and costs every tranche at that one price.
 
 ## Daily totals
 
@@ -102,6 +104,21 @@ values = shape.spread(hours, total)
 ```
 
 It fits the night consumption (22:00 to 6:00) as a straight line of the daily total, and spreads both parts along the average hourly profile. With fewer than 14 complete days it spreads evenly. The result is an estimate: it can't know, for example, that consumption moves to the night on red Tempo days.
+
+## Gas reference price
+
+Since July 2023 the CRE publishes each month a reference price of gas for homes, which replaced the regulated gas tariff. It has a yearly subscription and an average price of a kWh, both with taxes, for two profiles: `GasProfile.HEATING` (about 11 MWh a year) and `GasProfile.COOKING_WATER` (cooking and hot water, about 1 MWh a year).
+
+```python
+from elec_tariffs import GasProfile, PrvgClient, fixed_cost_per_day
+
+periods = await PrvgClient(session).async_price_periods(GasProfile.HEATING)
+# GasPricePeriod: start, end (None while in force), fixed_per_year, price
+latest = periods[-1]
+day_cost = 30.0 * latest.price + fixed_cost_per_day(latest.fixed_per_year, latest.start)
+```
+
+`PrvgClient` downloads the CRE's [open data file](https://www.cre.fr/fileadmin/Documents/Open_data/Marches_de_detail/OPEN_DATA_GRDF.xlsx) for the GRDF network, about 100 kB, and reads two of its sheets: the history of each month, and the prices of the month to come, published before it starts. Each month's prices last until the next month's; the last ones stay open. The spreadsheet is read with the standard library and checked strictly: an unexpected sheet, row or value raises `PrvgFormatError`.
 
 ## Tempo calendar sources
 
@@ -126,6 +143,7 @@ Every error derives from `ElecTariffsError`:
 
 - `MissingColorError`, `MissingPriceError` (with the `day` concerned);
 - `TrvServerError`, `TrvFormatError` for data.gouv.fr;
+- `PrvgServerError`, `PrvgFormatError` for the CRE's gas reference prices;
 - `TempoServerError` (network or 5xx), `TempoRateLimitError` (429), `TempoAuthError` (credentials refused) and `TempoFormatError` for the Tempo sources;
 - `WeatherServerError` (network or 5xx), `WeatherRateLimitError` (429) and `WeatherFormatError` (request refused or unexpected answer) for Open-Meteo.
 

@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [project]
 name = "elec-tariffs"
 dynamic = ["version"]
-description = "Cost French electricity consumption hour by hour under Base, HP/HC and Tempo contracts"
+description = "Cost French electricity consumption hour by hour under Base, HP/HC and Tempo contracts, and read the gas reference price"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "damou8" }]
 requires-python = ">=3.14"
 dependencies = ["aiohttp>=3.10"]
-keywords = ["electricity", "tariff", "tempo", "edf", "rte", "linky", "home-assistant"]
+keywords = ["electricity", "tariff", "tempo", "edf", "rte", "linky", "home-assistant", "gas", "cre"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Framework :: AsyncIO",
